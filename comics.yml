@@ -1,0 +1,24 @@
+---
+# Comic Metadata
+-
+    domain: http://www.smbc-comics.com
+    title: Saturday Morning Breakfast Cereal
+    creator: Zach Weinersmith
+    headline_image_url: 
+    xpath:
+        panel_image_url:
+        next_panel_url: 
+        prev_panel_url:
+        first_panel_url:
+        last_panel_url: 
+-
+    domain: http://xkcd.com
+    title: XKCD
+    creator: Randall Monroe
+    headline_image_url:
+    xpath:
+        panel_image_url: 
+        next_panel_url: 
+        prev_panel_url: 
+        first_panel_url: 
+        last_panel_url: 
