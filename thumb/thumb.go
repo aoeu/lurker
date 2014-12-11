@@ -1,5 +1,7 @@
-// Package Thumb generates thumbnails from comic panel images.
-
+/*
+The thumb package wraps the excellent smartcrop and gift libraries for
+generating thumbnail images from comic panels.
+*/
 package thumb
 
 import (
@@ -10,10 +12,14 @@ import (
 	_ "github.com/disintegration/gift"
 )
 
+// VisCrop takes a pointer to an image and uses the smartcrop library to
+// crop and generate a new thumbnail image.
 func VisCrop(src *image.Image) (image.Image, error) {
 	return nil, errors.New("oops")
 }
 
+// BlurMeDown takes a pointer to an image and uses gift to blur it artfully
+// and return it as a new image.
 func BlurMeDown(src *image.Image) (image.Image, error) {
 	return nil, errors.New("oops")
 }
