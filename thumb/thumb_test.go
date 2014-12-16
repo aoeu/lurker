@@ -4,7 +4,7 @@ thumb_test.go runs tests for the thumb package.
 package thumb
 
 import (
-	"fmt"
+	_ "fmt"
 	"image"
 	"image/png"
 	"os"
@@ -31,11 +31,11 @@ func TestVisCrop(t *testing.T) {
 			t.Error(err)
 		}
 		
-		dst, err := VisCrop(&src)
+		dst, err := VisCrop(src)
 		if err != nil {
 			t.Error(err)
 		}
-		fmt.Printf("%v\n", dst)
+		// fmt.Printf("%v\n", dst)
 		dstFile, _ := os.Create(filename + "_thumb.png")
 		defer dstFile.Close()
 		png.Encode(dstFile, dst)
