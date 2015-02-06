@@ -1,38 +1,26 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
+	_ "github.com/PuerkitoBio/fetchbot"
+	_ "github.com/PuerkitoBio/purell"
+	_ "github.com/moovweb/gokogiri"
+	_ "github.com/moovweb/gokogiri/html"
+	_ "github.com/moovweb/gokogiri/xpath"
 	"lurker/comic"
+	"lurker/maestro"
 	_ "lurker/thumb"
-	"net/http"
 )
-
-func callMaestro(reqBody []byte) {
-	client := &http.Client{}
-	req, err := http.NewRequest("PUT", "http://192.168.34.10:3000/comics", bytes.NewBuffer(reqBody))
-	req.Header.Set("Accepts", "application/vnd.api+json")
-	req.Header.Set("Content-Type", "application/vnd.api+json")
-	res, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	defer res.Body.Close()
-
-	fmt.Println("response Status:", res.Status)
-	fmt.Println("response Headers:", res.Header)
-	resBody, _ := ioutil.ReadAll(res.Body)
-	fmt.Println("response Body:", string(resBody))
-}
 
 func main() {
 	fmt.Println("Hello World")
 
-	var comics []comic.Comic
-	comics = comic.Load()
-
+	comics := comic.Load()
+	// for each comic make put request to maestro
 	for _, comic := range comics {
-		callMaestro(comic.Export())
+		id := maestro.Put(comic.Export())	
+		comic.SetId(id)
+		fmt.Printf("%+v\n", comic)
 	}
 }
+

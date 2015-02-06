@@ -1,11 +1,12 @@
 package comic
 
 import (
-        "encoding/json"
-        // "fmt"
+	"encoding/json"
+	// "fmt"
 )
 
 type Xpath struct {
+	id		 string    `json:"-"`
 	Hostname         string `json:"hostname"`
 	Title            string `json:"title"`
 	Creator          string `json:"creator"`
@@ -22,34 +23,34 @@ type Pattern struct {
 }
 
 func (x Xpath) Export() []byte {
-        output, err := json.Marshal(x)
+	output, err := json.Marshal(x)
 	if err != nil {
-                panic(err)
-        }
-        return output
+		panic(err)
+	}
+	return output
 }
 
-func (x Xpath) Prev() string {
+func (x Xpath) Parse() Panel {
 	//temp return pattern
-	return x.pattern.prev
+	return Panel {
+		nil,
+		0,
+		nil,
+		nil,
+		"first panel",
+		1,
+		"http://example.com/1",
+		"http://example.com/1.png",
+		"http://comicgator.com/panel.png",
+		"",
+		"First panel",
+	}
 }
 
-func (x Xpath) Next() string {
-	//temp return pattern
-	return x.pattern.next
+func (x Xpath) Id() string {
+	return x.id
 }
 
-func (x Xpath) Image() string {
-	//temp return pattern
-	return x.pattern.image
-}
-
-func (x Xpath) AltText() string {
-	//temp return pattern
-	return x.pattern.altText
-}
-
-func (x Xpath) BonusImage() string {
-	//temp return pattern
-	return x.pattern.bonusImage
+func (x Xpath) SetId(id string) {
+	x.id = id
 }
