@@ -66,7 +66,7 @@ func (p Panel) Export() []byte {
 }
 
 func Load() []Comic {
-	var filename string = "comics.json"
+	var filename string = "../../comics.json"
 	var models []model
 	var comics []Comic
 	source, err := ioutil.ReadFile(filename)

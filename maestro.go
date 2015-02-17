@@ -1,5 +1,5 @@
 // maestro package handles all requests to api machine
-package maestro
+package lurker
 
 import (
 	"fmt"

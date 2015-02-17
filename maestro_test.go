@@ -1,4 +1,4 @@
-package maestro
+package lurker
 
 import (
 	"fmt"

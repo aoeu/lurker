@@ -10,8 +10,9 @@ sudo apt-get -y install pkg-config
 sudo apt-get -y install git
 
 # install go
-wget https://storage.googleapis.com/golang/go1.3.3.linux-amd64.tar.gz
-sudo tar -C /usr/local -xzf go1.3.3.linux-amd64.tar.gz
+echo "Installing golang 1.4.1"
+wget https://storage.googleapis.com/golang/go1.4.1.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.4.1.linux-amd64.tar.gz
 echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc 
 echo 'export GOPATH=$HOME/go' >> ~/.bashrc 
 echo 'export PATH=$PATH:$GOPATH/bin' >> ~/.bashrc 
@@ -19,6 +20,7 @@ sudo chown -R vagrant:vagrant /home/vagrant/go
 
 # install libxml for gokogiri
 sudo apt-get -y install libxml2-dev
+
 
 # Some obstinate sites may have too much JS for their own good.
 # Use this to proxy lurker's requests to statically render the site.
