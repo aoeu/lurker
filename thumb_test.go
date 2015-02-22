@@ -1,7 +1,7 @@
 /*
 thumb_test.go runs tests for the thumb package.
 */
-package thumb
+package lurker
 
 import (
 	_ "fmt"

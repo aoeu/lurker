@@ -1,8 +1,8 @@
 /*
-The thumb package wraps the excellent smartcrop and gift libraries for
+The thumb file wraps the excellent smartcrop and gift libraries for
 generating thumbnail images from comic panels.
 */
-package thumb
+package lurker
 
 import (
 	"fmt"
