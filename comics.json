@@ -1,25 +1,12 @@
 [
     {
-        "hostname": "www.smbc-comics.com",
-        "title": "Saturday Morning Breakfast Cereal",
-        "creator": "Zach Weinersmith",
-        "headline_image_url": "http://comicgator.com/assets/headline/comic.png",
-        "method": "xpath",
-        "pattern": {
-            "title": "",
-            "prev": "//*[@id=\"comicnavtop\"]/a[2]",
-            "next": "//*[@id=\"comicnavtop\"]/a[6]",
-            "image": "//*[@id=\"comicimage\"]/img",
-            "bonus_image": "//*[@id=\"aftercomic\"]/img"
-        }
-    },
-    {
         "hostname": "xkcd.com",
         "title": "XKCD",
         "creator": "Randall Monroe",
         "headline_image_url": "http://comicgator.com/assets/headline/comic.png",
-        "method": "xpath",
+        "first_page_url": "http://xkcd.com/1488/",
         "pattern": {
+            "method": "xpath",
             "title": "//*[@id=\"ctitle\"]",
             "prev": "//*[@id=\"middleContainer\"]/ul[1]/li[2]/a",
             "next": "//*[@id=\"middleContainer\"]/ul[1]/li[4]/a",

@@ -2,13 +2,12 @@
 package lurker
 
 import (
-	"fmt"
-	"net/http"
-	"io/ioutil"
 	"bytes"
 	"encoding/json"
+	"io/ioutil"
+	"log"
+	"net/http"
 )
-
 
 func Put(reqBody []byte) string {
 	client := &http.Client{}
@@ -21,10 +20,10 @@ func Put(reqBody []byte) string {
 	}
 	defer res.Body.Close()
 
-	fmt.Println("response Status:", res.Status)
-	fmt.Println("response Headers:", res.Header)
+	log.Println("response Status:", res.Status)
+	log.Println("response Headers:", res.Header)
 	resBody, _ := ioutil.ReadAll(res.Body)
-	fmt.Println("response Body:", string(resBody))
+	log.Println("response Body:", string(resBody))
 	var comic map[string]string
 
 	err = json.Unmarshal(resBody, &comic)

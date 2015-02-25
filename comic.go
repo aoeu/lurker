@@ -1,151 +1,142 @@
 // Comic file contains interface for comic structures and defines methods
-// for parsing strip webpage html.
+// for parsing comicstrip webpage html.
 package lurker
 
 import (
-	// "fmt"
-	"io/ioutil"
+	"log"
 	"encoding/json"
+	"github.com/moovweb/gokogiri"
+	_ "github.com/moovweb/gokogiri/html"
+	_ "github.com/moovweb/gokogiri/xpath"
+	_ "reflect"
 )
 
-type model map[string]interface{}
-
-type Comic interface {
-	Export() []byte
-	Parse() Strip
-	Id() string
-	SetId(string)
-}
-
-type Strip struct {
-	Comic *Comic
-	Id int
-	PreviousStrip *Strip
-	NextStrip *Strip
-	Title string
-	Number int
-	Url string
-	ImageUrl string
-	ThumbnailImageUrl string
-	BonusImageUrl string
-	AltText string
-}
-
-func (p Strip) Export() []byte {
-	// basic template for exporting Strip as json
-	// TODO: actually fill data from Strip struct 
-	panel := struct {
-		ComicId int `json:comic_id`
-		PreviousPanelId int `json:previous_panel_id`
-		NextPanelId int `json:next_panel_id`
-		Title string `json:title`
-		Number int `json:number`
-		Url string `json:url`
-		ImageUrl string `json:image_url`
-		ThumbnailImageUrl string `json:thumbnail_image_url`
-		BonusImageUrl string `json:bonus_image_url`
-		AltText string `json:alt_text`
-	} {
-		0,
-		0,
-		0,
-		"first panel",
-		1,
-		"http://example.com/1",
-		"http://example.com/1.png",
-		"http://comicgator.com/panel.png",
-		"",
-		"First panel",
-	}
-
-	output, err := json.Marshal(panel)
-	if err != nil {
-		panic(err)
-	}
-	return output
-}
-
-
-type Xpath struct {
-	id		 string    `json:"-"`
+type Comic struct {
+	id               string `json:"-"`
 	Hostname         string `json:"hostname"`
 	Title            string `json:"title"`
 	Creator          string `json:"creator"`
 	HeadlineImageUrl string `json:"headline_image_url"`
-	pattern          Pattern `json:"-"`
+	FirstPageUrl     string `json:"first_page_url"`
+	Pattern          struct {
+		Method     string `json:"method"`
+		Title      string `json:"title"`
+		Prev       string `json:"prev"`
+		Next       string `json:"next"`
+		Image      string `json:"image"`
+		BonusImage string `json:"bonus_image"`
+	} `json:"pattern"`
 }
 
-type Pattern struct {
-	title      string
-	prev       string
-	next       string
-	image      string
-	bonusImage string
-}
-
-func (x Xpath) Export() []byte {
-	output, err := json.Marshal(x)
+func (c Comic) Export() []byte {
+	m := map[string]interface{}{} // ideally use make with the right capacity
+	m["hostname"] = c.Hostname
+	m["title"] = c.Title
+	m["creator"] = c.Creator
+	m["headline_image_url"] = c.HeadlineImageUrl
+	output, err := json.Marshal(m)
 	if err != nil {
 		panic(err)
 	}
 	return output
 }
 
-func (x Xpath) Parse() Strip {
-	//temp return pattern
-	return Strip {
-		nil,
-		0,
-		nil,
-		nil,
-		"first panel",
-		1,
-		"http://example.com/1",
-		"http://example.com/1.png",
-		"http://comicgator.com/panel.png",
-		"",
-		"First panel",
+func (c *Comic) SetId(id string) {
+	c.id = id
+}
+
+func (c Comic) Id() string {
+	return c.id
+}
+
+func (c *Comic) Parse(page []byte) (Strip, string)  {
+	var strip Strip = Strip{}
+	var nextUrl string = ""
+
+	strip.Comic = c
+	strip.ComicId = c.Id()
+
+
+	doc, err := gokogiri.ParseHtml(page)
+	if err != nil {
+		log.Fatalln(err)
 	}
+	defer doc.Free() 
+	
+	// Get title from doc
+	// xtitle := xpath.Compile(c.Pattern.Title)
+	// stitle, err := doc.Root().Search(xtitle)
+	// if err != nil {
+	// 	log.Fatalln(err)
+	// }
+	// title := stitle[0].Content()
+	// strip.Title = title
+
+	// Don't need previous at the moment
+	// xprev := xpath.Compile(c.Pattern.Prev)
+	// sprev, err := doc.Root().Search(xprev)
+	// if err != nil {
+	// 	log.Fatalln(err)
+	// }
+	// prev := sprev[0].Attr("href")
+
+	// xnext := xpath.Compile(c.Pattern.Next)
+	// snext, err := doc.Root().Search(xnext)
+	// if err != nil {
+	// 	log.Fatalln(err)
+	// }
+	// next := snext[0].Attr("href")
+	// if next != "" {
+	// 	nextUrl = "http://" + c.Hostname + next	
+	// }
+	
+
+	// ximage := xpath.Compile(c.Pattern.Image)
+	// simage, err := doc.Root().Search(ximage)
+	// if err != nil {
+	// 	log.Fatalln(err)
+	// }
+	// imageUrl := simage[0].Attr("src")
+	// strip.ImageUrl = imageUrl
+
+	// altText := simage[0].Attr("title")
+	// strip.AltText = altText
+
+	// bonus image is causing memory leak
+	// xbonusimage := xpath.Compile(c.Pattern.BonusImage)
+	// sbonusimage, _ := doc.Root().Search(xbonusimage)
+	// if err != nil {
+	// 	log.Fatalln(err)
+	// }
+
+	// bonusImage := sbonusimage[0].Attr("href")
+
+	// log.Println(bonusImage)
+	// log.Println(reflect.TypeOf(xbonusimage))
+
+	return strip, nextUrl
 }
 
-func (x Xpath) Id() string {
-	return x.id
+
+
+type Strip struct {
+	Comic             *Comic
+	Id                string `json:"-"`
+	ComicId           string `json:comic_id`
+	Title             string `json:title`
+	Number            int    `json:number`
+	Url               string `json:url`
+	ImageUrl          string `json:image_url`
+	ThumbnailImageUrl string `json:thumbnail_image_url`
+	BonusImageUrl     string `json:bonus_image_url`
+	AltText           string `json:alt_text`
 }
 
-func (x Xpath) SetId(id string) {
-	x.id = id
-}
-
-func LoadComics() []Comic {
-	var filename string = "/home/vagrant/go/src/github.com/comicgator/lurker/comics.json"
-	var models []model
-	var comics []Comic
-	source, err := ioutil.ReadFile(filename)
+func (s Strip) Export() []byte {
+	// basic template for exporting Strip as json
+	output, err := json.Marshal(s)
 	if err != nil {
 		panic(err)
 	}
-	err = json.Unmarshal(source, &models)
-	if err != nil {
-		panic(err)
-	}
-
-	for _, m := range models {
-		if m["method"] == "xpath" {
-			p := m["pattern"].(map[string]interface{})
-			xpath := Xpath {
-				Hostname: m["hostname"].(string),
-				Title: m["title"].(string),
-				Creator: m["creator"].(string),
-				HeadlineImageUrl: m["headline_image_url"].(string),
-				pattern: Pattern {
-					title: p["title"].(string),
-					prev: p["prev"].(string),
-					next: p["next"].(string),
-					image: p["image"].(string),
-					bonusImage: p["bonus_image"].(string)}}
-			comics = append(comics, xpath)
-		}
-		// fmt.Printf("%+v\n", m)
-	}
-	return comics
+	return output
 }

@@ -1,24 +1,36 @@
 package main
 
 import (
-	"fmt"
-	_ "github.com/moovweb/gokogiri"
-	_ "github.com/moovweb/gokogiri/html"
-	_ "github.com/moovweb/gokogiri/xpath"
-
+	"log"
 	"github.com/comicgator/lurker"
-	// "github.com/comicgator/lurker/comic"
+	"io/ioutil"
+	"encoding/json"
 )
 
 func main() {
-	fmt.Println("Hello World")
+	log.Println("Spinning up...")
+	var delta bool = false
 
-	comics := lurker.LoadComics()
-	// for each comic make put request to maestro
-	for _, comic := range comics {
-		// id := maestro.Put(comic.Export())	
-		// comic.SetId(id)
-		fmt.Printf("%+v\n", comic)
-	}
+	// Read in comics.json file
+	comics := LoadComics()
+	// TODO: insert command line option logic to call specific running
+	// strategies.
+	lurker.ETL(comics, delta)
 }
 
+// Reads json file and unmarshals into list of comic structs.
+func LoadComics() []lurker.Comic {
+	var filename string = "/home/vagrant/go/src/github.com/comicgator/lurker/comics.json"
+	// var models []model
+	var comics []lurker.Comic
+	source, err := ioutil.ReadFile(filename)
+	if err != nil {
+		panic(err)
+	}
+	// Unmarshal into unopinonated model.
+	err = json.Unmarshal(source, &comics)
+	if err != nil {
+		panic(err)
+	}
+	return comics
+}

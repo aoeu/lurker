@@ -1,85 +1,46 @@
 package lurker
 
 import (
-	"fmt"
+	"log"
+	"net/http"
+	"time"
+	"io/ioutil"
 )
 
-type Fetcher interface {
-	// Fetch returns the body of URL and
-	// a slice of URLs found on that page.
-	Fetch(url string) (body string, urls []string, err error)
+func Crawl(comic Comic, url string, count int) []Strip {
+	var strips []Strip
+	for url != "" {
+		page := fetch(url)
+		newStrip, newUrl := comic.Parse(page)
+		url = newUrl
+		newStrip.Number = count
+		strips = append(strips, newStrip)
+		count += 1
+		// Sleep 5 seconds to limit abuse to comic websites
+		log.Println("Sleepy time")
+		time.Sleep(5 * time.Second)
+	}
+	return strips
 }
 
-// Crawl uses fetcher to recursively crawl
-// pages starting with url, to a maximum of depth.
-func Crawl(url string, depth int, fetcher Fetcher) {
-	// TODO: Fetch URLs in parallel.
-	// TODO: Don't fetch the same URL twice.
-	// This implementation doesn't do either:
-	if depth <= 0 {
-		return
-	}
-	body, urls, err := fetcher.Fetch(url)
+func fetch(url string) []byte {
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatalln(err)
 	}
-	fmt.Printf("found: %s %q\n", url, body)
-	for _, u := range urls {
-		Crawl(u, depth-1, fetcher)
-	}
-	return
-}
+	
+	req.Header.Set("User-Agent", "ComicGatorBot/1.0 (https://github.com/comicgator/lurker)")
 
-func main() {
-	Crawl("http://golang.org/", 4, fetcher)
-}
+        resp, err := client.Do(req)
+        if err != nil {
+                log.Fatalln(err)
+        }
 
-// fakeFetcher is Fetcher that returns canned results.
-type fakeFetcher map[string]*fakeResult
-
-type fakeResult struct {
-	body string
-	urls []string
-}
-
-func (f fakeFetcher) Fetch(url string) (string, []string, error) {
-	if res, ok := f[url]; ok {
-		return res.body, res.urls, nil
-	}
-	return "", nil, fmt.Errorf("not found: %s", url)
-}
-
-// fetcher is a populated fakeFetcher.
-var fetcher = fakeFetcher{
-	"http://golang.org/": &fakeResult{
-		"The Go Programming Language",
-		[]string{
-			"http://golang.org/pkg/",
-			"http://golang.org/cmd/",
-		},
-	},
-	"http://golang.org/pkg/": &fakeResult{
-		"Packages",
-		[]string{
-			"http://golang.org/",
-			"http://golang.org/cmd/",
-			"http://golang.org/pkg/fmt/",
-			"http://golang.org/pkg/os/",
-		},
-	},
-	"http://golang.org/pkg/fmt/": &fakeResult{
-		"Package fmt",
-		[]string{
-			"http://golang.org/",
-			"http://golang.org/pkg/",
-		},
-	},
-	"http://golang.org/pkg/os/": &fakeResult{
-		"Package os",
-		[]string{
-			"http://golang.org/",
-			"http://golang.org/pkg/",
-		},
-	},
+        defer resp.Body.Close()
+        body, err := ioutil.ReadAll(resp.Body)
+        if err != nil {
+                log.Fatalln(err)
+        }
+        return body
 }
