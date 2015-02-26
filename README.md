@@ -9,8 +9,8 @@ Web crawler written in go designed to search and save comic data.
 
 Install dependencies
 
-    $ cd /home/vagrant/go/src/github.com/c11z/lurker
-	$ get get ./...
+    $ cd /home/vagrant/go/src/github.com/comicgator/lurker
+	$ go get ./...
 
 Install cmd's
 
