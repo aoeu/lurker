@@ -3,8 +3,6 @@ package lurker
 
 import (
 	"log"
-	"net/url"
-
 )
 
 // Full function gets all strips from all comics starting at the first page.
@@ -15,7 +13,7 @@ func ETL(comicList []Comic, delta bool) {
 	// TODO: goroutine
 	for _, comic := range comicList {
 		var count int
-		var start *url.URL
+		var start string
 		if delta {
 			log.Println("Delta requested")
 			// Go get last Strip for each comic from the database
@@ -23,20 +21,19 @@ func ETL(comicList []Comic, delta bool) {
 			// Set Comic.StripCount to Strip.Number
 			// TODO: remove temp setting of count and startUrl
 			count = 0
-			start, _ = url.Parse(comic.FirstPageUrl)
+			start = comic.FirstPageUrl
 			// if err != nil {
 				// panic(err)
 			// }
 			// start = last
 		} else {
 			count = 0
-			start, _ = url.Parse(comic.FirstPageUrl)
+			start = comic.FirstPageUrl
 			
 		}
-		log.Printf("Crawling Comic %s\n", comic.Hostname)
-		log.Printf("Starting at url %s\n", start.String())
+		log.Printf("Crawling Comic %s\n\n", comic.Hostname)
 		strips := Crawl(comic, start, count)
-		log.Println("Crawling Complete")
+		log.Println("Crawl Complete")
 		for _, strip := range strips {
 			log.Print(string(strip.Export()))
 		}

@@ -2,40 +2,47 @@ package lurker
 
 import (
 	"errors"
+	"github.com/PuerkitoBio/purell"
 	"github.com/moovweb/gokogiri"
 	"github.com/moovweb/gokogiri/xml"
 	"github.com/moovweb/gokogiri/xpath"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"time"
-	// "reflect"
 )
 
-func Crawl(comic Comic, uri *url.URL, count int) []Strip {
+func Crawl(comic Comic, url string, count int) []Strip {
 	var strips []Strip
-	visited := make(map[*url.URL]bool)
-	for visited[uri] != true {
+	visited := make(map[string]bool)
+	for visited[url] != true {
 		count += 1
 		var newStrip Strip
+
 		newStrip.ComicId = comic.Id()
-		newStrip.Url = uri.String()
+		newStrip.Url = url
 		newStrip.Number = count
 
-		page := fetch(uri)
-		title, err := parseTitle(page, comic.Pattern.Title)
-		if err != nil {
-			log.Println(err)
-		} else {
-			newStrip.Title = title
-		}
+		log.Println("Fetching url " + url)
+		page := fetch(url)
+		log.Println("Parsing...")
+		// Every comic should have a strip image url.
 		image, err := parseImage(page, comic.Pattern.Image)
 		if err != nil {
 			log.Println(err)
 		} else {
-			newStrip.ImageUrl = image.String()
+			newStrip.ImageUrl = image
 		}
+
+		if len(comic.Pattern.Title) > 0 {
+			title, err := parseTitle(page, comic.Pattern.Title)
+			if err != nil {
+				log.Println(err)
+			} else {
+				newStrip.Title = title
+			}
+		}
+
 		// Alt text is retrieved from the same node as the Image thus
 		// uses the same pattern
 		altText, err := parseAltText(page, comic.Pattern.Image)
@@ -44,45 +51,46 @@ func Crawl(comic Comic, uri *url.URL, count int) []Strip {
 		} else {
 			newStrip.AltText = altText
 		}
-		bonus, err := parseImage(page, comic.Pattern.BonusImage)
-		if err != nil {
-			log.Println(err)
-		} else {
-			newStrip.BonusImageUrl = bonus.String()
+
+		if len(comic.Pattern.BonusImage) > 0 {
+			bonus, err := parseImage(page, comic.Pattern.BonusImage)
+			if err != nil {
+				log.Println(err)
+			} else {
+				newStrip.BonusImageUrl = bonus
+			}
 		}
 
 		strips = append(strips, newStrip)
 
-		// Get next uri to crawl
+		// Get next url to crawl. If there is an error finding the next
+		// endpoint then break the loop.
 		endpoint, err := parseNext(page, comic.Pattern.Next)
 		if err != nil {
-			// There is an error finding the next endpoint break
-			// the loop
 			log.Println(err)
 			break
 		} else {
-			// Store uri in visited urls and then reassign to new uri
-			visited[uri] = true
-			newUri, err := url.Parse(comic.Url + endpoint)
+			// Store url in visited urls and then reassign to new url
+			visited[url] = true
+			newUrl, err := cleanURL(comic.Url + endpoint)
 			if err != nil {
-				// The new endpoint doesn't make sense, break
-				// the loop
+				log.Println(err)
 				break
 			}
-			// everyrthing is good assign newUri to uri and loop again
-			uri = newUri
+			url = newUrl
 		}
 
 		// Sleep 5 seconds to limit abuse to comic websites
-		log.Println("Sleepy time\n\n")
+		log.Println("Parse Complete!")
+		log.Println("Resting...\n")
 		time.Sleep(5 * time.Second)
 	}
 	return strips
 }
 
-func fetch(uri *url.URL) []byte {
+func fetch(url string) []byte {
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", uri.String(), nil)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -102,7 +110,12 @@ func fetch(uri *url.URL) []byte {
 	return body
 }
 
-func xpathParse(page []byte, paths []string) []xml.Node {
+func cleanURL(input string) (output string, err error) {
+	output, err = purell.NormalizeURLString(input, purell.FlagsUnsafeGreedy)
+	return
+}
+
+func searchXpath(page []byte, paths []string) []xml.Node {
 	// Parse html page
 	doc, err := gokogiri.ParseHtml(page)
 	if err != nil {
@@ -131,14 +144,12 @@ func xpathParse(page []byte, paths []string) []xml.Node {
 func parseNext(page []byte, paths []string) (next string, err error) {
 	var endpoints []string
 	var nodes []xml.Node
-	nodes = xpathParse(page, paths)
+	nodes = searchXpath(page, paths)
 	for _, node := range nodes {
-		
 		attrCheck := node.Attribute("href")
 		if attrCheck != nil {
 			value := node.Attr("href")
-			log.Println("Endpoint value: " + value)
-			if value != "" || value != "#" {
+			if value != "" && value != "#" {
 				endpoints = append(endpoints, value)
 			}
 		}
@@ -151,10 +162,10 @@ func parseNext(page []byte, paths []string) (next string, err error) {
 	return
 }
 
-func parseImage(page []byte, paths []string) (uri *url.URL, err error) {
+func parseImage(page []byte, paths []string) (url string, err error) {
 	var sources []string
 
-	nodes := xpathParse(page, paths)
+	nodes := searchXpath(page, paths)
 	for _, node := range nodes {
 		srcCheck := node.Attribute("src")
 		if srcCheck != nil {
@@ -166,7 +177,7 @@ func parseImage(page []byte, paths []string) (uri *url.URL, err error) {
 	}
 	if len(sources) > 0 {
 		item := sources[0]
-		uri, err = url.Parse(item)
+		url, err = cleanURL(item)
 		if err != nil {
 			err = errors.New("Unable to parse url " + item)
 		}
@@ -180,7 +191,7 @@ func parseImage(page []byte, paths []string) (uri *url.URL, err error) {
 func parseAltText(page []byte, paths []string) (alt string, err error) {
 	var alts []string
 
-	nodes := xpathParse(page, paths)
+	nodes := searchXpath(page, paths)
 	for _, node := range nodes {
 		titleCheck := node.Attribute("title")
 		altCheck := node.Attribute("alt")
@@ -197,7 +208,7 @@ func parseAltText(page []byte, paths []string) (alt string, err error) {
 			}
 		}
 	}
-	if len(alts) < 0 {
+	if len(alts) > 0 {
 		alt = alts[0]
 	} else {
 		err = errors.New("Unable to find alt text.")
@@ -207,7 +218,7 @@ func parseAltText(page []byte, paths []string) (alt string, err error) {
 
 func parseTitle(page []byte, paths []string) (title string, err error) {
 	var titles []string
-	nodes := xpathParse(page, paths)
+	nodes := searchXpath(page, paths)
 	for _, node := range nodes {
 		value := node.Content()
 		if value != "" {
