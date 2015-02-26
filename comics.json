@@ -1,17 +1,18 @@
 [
     {
         "hostname": "xkcd.com",
+        "url": "http://xkcd.com/",
         "title": "XKCD",
         "creator": "Randall Monroe",
         "headline_image_url": "http://comicgator.com/assets/headline/comic.png",
         "first_page_url": "http://xkcd.com/1488/",
         "pattern": {
             "method": "xpath",
-            "title": "//*[@id=\"ctitle\"]",
-            "prev": "//*[@id=\"middleContainer\"]/ul[1]/li[2]/a",
-            "next": "//*[@id=\"middleContainer\"]/ul[1]/li[4]/a",
-            "image": "//*[@id=\"comic\"]/img",
-            "bonus_image": ""   
+            "title": ["//*[@id=\"ctitle\"]"],
+            "prev": ["//*[@id=\"middleContainer\"]/ul[1]/li[2]/a"],
+            "next": ["//*[@id=\"middleContainer\"]/ul[1]/li[4]/a"],
+            "image": ["//*[@id=\"comic\"]/img"],
+            "bonus_image": []   
         }
     }
 ]

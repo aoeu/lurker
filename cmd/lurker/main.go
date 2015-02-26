@@ -8,11 +8,13 @@ import (
 )
 
 func main() {
-	log.Println("Spinning up...")
+	log.Println("Lurker Up")
 	var delta bool = false
 
 	// Read in comics.json file
+	log.Println("Loading comics...")
 	comics := LoadComics()
+	log.Printf("%d Comics Loaded\n", len(comics))
 	// TODO: insert command line option logic to call specific running
 	// strategies.
 	lurker.ETL(comics, delta)
