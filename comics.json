@@ -21,7 +21,7 @@
         "title": "Saturday Morning Breakfast Cereal",
         "creator": "Zach Weinersmith",
         "headline_image_url": "",
-        "first_page_url": "http://www.smbc-comics.com/?id=3650#comic",
+        "first_page_url": "http://www.smbc-comics.com?id=3650",
         "pattern": {
             "method": "xpath",
             "title": [],
