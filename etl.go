@@ -23,15 +23,16 @@ func ETL(comicList []Comic, delta bool) {
 			count = 0
 			start = comic.FirstPageUrl
 			// if err != nil {
-				// panic(err)
+			// panic(err)
 			// }
 			// start = last
 		} else {
 			count = 0
 			start = comic.FirstPageUrl
-			
+
 		}
 		log.Printf("Crawling Comic %s\n\n", comic.Hostname)
+		log.Print(string(comic.Export()))
 		strips := Crawl(comic, start, count)
 		log.Println("Crawl Complete")
 		for _, strip := range strips {

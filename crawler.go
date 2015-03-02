@@ -6,9 +6,7 @@ import (
 	"github.com/moovweb/gokogiri"
 	"github.com/moovweb/gokogiri/xml"
 	"github.com/moovweb/gokogiri/xpath"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"time"
 )
 
@@ -24,7 +22,7 @@ func Crawl(comic Comic, url string, count int) []Strip {
 		newStrip.Number = count
 
 		log.Println("Fetching url " + url)
-		page := fetch(url)
+		page := FetchComicPage(url)
 		log.Println("Parsing...")
 		// Every comic should have a strip image url.
 		image, err := parseImage(page, comic.Pattern.Image)
@@ -86,28 +84,6 @@ func Crawl(comic Comic, url string, count int) []Strip {
 		time.Sleep(5 * time.Second)
 	}
 	return strips
-}
-
-func fetch(url string) []byte {
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	req.Header.Set("User-Agent", "ComicGatorBot/1.0 (https://github.com/comicgator/lurker)")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	return body
 }
 
 func cleanURL(input string) (output string, err error) {

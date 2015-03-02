@@ -9,14 +9,14 @@ import (
 )
 
 type Comic struct {
-	id            string   `json:"-"`
-	Url           string  `json:"url"`
-	Hostname      string   `json:"hostname"`
-	Title         string   `json:"title"`
-	Creator       string   `json:"creator"`
-	HeadlineImageUrl string  `json:"headline_image_url"`
-	FirstPageUrl     string  `json:"first_page_url"`
-	Pattern       *Pattern `json:"pattern"`
+	id               string   `json:"-"`
+	Url              string   `json:"url"`
+	Hostname         string   `json:"hostname"`
+	Title            string   `json:"title"`
+	Creator          string   `json:"creator"`
+	HeadlineImageUrl string   `json:"headline_image_url"`
+	FirstPageUrl     string   `json:"first_page_url"`
+	Pattern          *Pattern `json:"pattern"`
 }
 
 type Pattern struct {
@@ -50,15 +50,15 @@ func (c Comic) Id() string {
 }
 
 type Strip struct {
-	Id             string  `json:"-"`
-	ComicId        string  `json:comic_id`
-	Title          string  `json:title`
-	Number         int     `json:number`
-	Url            string `json:url`
-	ImageUrl          string `json:image_url`
-	ThumbnailImageUrl string `json:thumbnail_image_url`
-	BonusImageUrl     string `json:bonus_image_url`
-	AltText        string  `json:alt_text`
+	Id                string `json:"-"`
+	ComicId           string `json:"comic_id"`
+	Title             string `json:"title"`
+	Number            int    `json:"number"`
+	Url               string `json:"url"`
+	ImageUrl          string `json:"image_url"`
+	ThumbnailImageUrl string `json:"thumbnail_image_url"`
+	BonusImageUrl     string `json:"bonus_image_url"`
+	AltText           string `json:"alt_text"`
 }
 
 func (s Strip) Export() []byte {
