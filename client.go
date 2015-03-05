@@ -102,20 +102,3 @@ func get(url string) (body []byte, err error) {
 	}
 	return
 }
-
-// func Save(payload []byte, endpoint string) (string, error) {
-// 	// Try POST
-
-// 	// if http 400 then STATUS 400 Bad Request
-// TIME 38 ms
-// Pretty Raw Preview  JSON Copy
-// {
-// "hint": null,
-// "details": "Key (url)=(http://xkcd.com/1488) already exists.",
-// "code": "23505",
-// "message": "duplicate key value violates unique constraint \"strip_uq_url\""
-// }
-
-// Location → /comic?id=eq.35a36d33-3c62-4336-a075-09ad96942432
-
-// }
