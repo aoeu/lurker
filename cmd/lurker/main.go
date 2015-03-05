@@ -1,10 +1,10 @@
 package main
 
 import (
-	"log"
+	"encoding/json"
 	"github.com/comicgator/lurker"
 	"io/ioutil"
-	"encoding/json"
+	"log"
 )
 
 func main() {

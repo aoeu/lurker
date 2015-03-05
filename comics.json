@@ -1,33 +1,33 @@
 [
     {
         "hostname": "xkcd.com",
-        "url": "http://xkcd.com",
         "title": "XKCD",
         "creator": "Randall Monroe",
         "headline_image_url": "",
-        "first_page_url": "http://xkcd.com/1488",
+        "first_page_url": "http://xkcd.com/1493",
         "pattern": {
             "method": "xpath",
             "title": ["//*[@id=\"ctitle\"]"],
             "prev": ["//*[@id=\"middleContainer\"]/ul[1]/li[2]/a"],
             "next": ["//*[@id=\"middleContainer\"]/ul[1]/li[4]/a"],
             "image": ["//*[@id=\"comic\"]/img", "//*[@id=\"comic\"]/a/img"],
+            "alt_text": ["//*[@id=\"comic\"]/img", "//*[@id=\"comic\"]/a/img"],
             "bonus_image": []   
         }
     },
     {
-        "hostname": "www.smbc-comics.com",
-        "url": "http://www.smbc-comics.com",
+        "hostname": "smbc-comics.com",
         "title": "Saturday Morning Breakfast Cereal",
         "creator": "Zach Weinersmith",
         "headline_image_url": "",
-        "first_page_url": "http://www.smbc-comics.com?id=3650",
+        "first_page_url": "http://smbc-comics.com?id=3658",
         "pattern": {
             "method": "xpath",
             "title": [],
             "prev": ["//*[@id=\"comicnavtop\"]/a[2]"],
-            "next": ["//*[@id=\"comicnavtop\"]/a[6]"],
-            "image": ["//*[@id=\"comicimage\"]/img"],
+            "next": ["//*[@id=\"navtop\"]/div[1]/a[4]"],
+            "image": ["//*[@id=\"comic\"]"],
+            "alt_text": [],
             "bonus_image": ["//*[@id=\"aftercomic\"]/img"]   
         }
     }

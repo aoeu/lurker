@@ -7,33 +7,35 @@ import (
 	"github.com/moovweb/gokogiri/xml"
 	"github.com/moovweb/gokogiri/xpath"
 	"log"
+	"strings"
 	"time"
 )
 
-func Crawl(comic Comic, url string, count int) []Strip {
+func Crawl(comicID, hostname, url string, count int, pattern *Pattern) []Strip {
 	var strips []Strip
 	visited := make(map[string]bool)
 	for visited[url] != true {
 		count += 1
 		var newStrip Strip
 
-		newStrip.ComicId = comic.Id()
-		newStrip.Url = url
+		newStrip.URL = url
+		newStrip.GenerateUUID()
+		newStrip.ComicId = comicID
 		newStrip.Number = count
 
 		log.Println("Fetching url " + url)
 		page := FetchComicPage(url)
 		log.Println("Parsing...")
 		// Every comic should have a strip image url.
-		image, err := parseImage(page, comic.Pattern.Image)
+		image, err := parseImage(page, pattern.Image)
 		if err != nil {
 			log.Println(err)
 		} else {
-			newStrip.ImageUrl = image
+			newStrip.ImageURL = buildURL(hostname, image)
 		}
 
-		if len(comic.Pattern.Title) > 0 {
-			title, err := parseTitle(page, comic.Pattern.Title)
+		if len(pattern.Title) > 0 {
+			title, err := parseTitle(page, pattern.Title)
 			if err != nil {
 				log.Println(err)
 			} else {
@@ -41,21 +43,21 @@ func Crawl(comic Comic, url string, count int) []Strip {
 			}
 		}
 
-		// Alt text is retrieved from the same node as the Image thus
-		// uses the same pattern
-		altText, err := parseAltText(page, comic.Pattern.Image)
-		if err != nil {
-			log.Println(err)
-		} else {
-			newStrip.AltText = altText
-		}
-
-		if len(comic.Pattern.BonusImage) > 0 {
-			bonus, err := parseImage(page, comic.Pattern.BonusImage)
+		if len(pattern.AltText) > 0 {
+			altText, err := parseAltText(page, pattern.Image)
 			if err != nil {
 				log.Println(err)
 			} else {
-				newStrip.BonusImageUrl = bonus
+				newStrip.AltText = altText
+			}
+		}
+
+		if len(pattern.BonusImage) > 0 {
+			bonus, err := parseImage(page, pattern.BonusImage)
+			if err != nil {
+				log.Println(err)
+			} else {
+				newStrip.BonusImageURL = buildURL(hostname, bonus)
 			}
 		}
 
@@ -63,19 +65,15 @@ func Crawl(comic Comic, url string, count int) []Strip {
 
 		// Get next url to crawl. If there is an error finding the next
 		// endpoint then break the loop.
-		endpoint, err := parseNext(page, comic.Pattern.Next)
+		endpoint, err := parseNext(page, pattern.Next)
 		if err != nil {
 			log.Println(err)
 			break
 		} else {
 			// Store url in visited urls and then reassign to new url
 			visited[url] = true
-			newUrl, err := cleanURL(comic.Url + endpoint)
-			if err != nil {
-				log.Println(err)
-				break
-			}
-			url = newUrl
+			newURL := buildURL(hostname, endpoint)
+			url = newURL
 		}
 
 		// Sleep 5 seconds to limit abuse to comic websites
@@ -84,6 +82,24 @@ func Crawl(comic Comic, url string, count int) []Strip {
 		time.Sleep(5 * time.Second)
 	}
 	return strips
+}
+
+func buildURL(hostname, input string) string {
+	// Assumes that next link is always and endpoint
+	// TODO: be smarter about building the url
+	var raw string
+	// Key it simple and check if url is relative or not
+	if strings.Contains(input, "http") {
+		raw = input
+	} else {
+		raw = "http://" + hostname + input
+	}
+	url, err := cleanURL(raw)
+	if err != nil {
+		log.Println(raw)
+		log.Fatalln(err)
+	}
+	return url
 }
 
 func cleanURL(input string) (output string, err error) {
