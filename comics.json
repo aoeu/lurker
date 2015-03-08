@@ -1,24 +1,26 @@
 [
     {
+        "code": "xkcd",
         "url": "http://xkcd.com",
-        "headline": "XKCD",
+        "title": "XKCD",
         "creator": "Randall Monroe",
         "banner": "",
         "start": "http://xkcd.com/1493",
         "next": {"method": "xpath", "pattern": ""},
-        "title": {"method": "xpath", "pattern": ""},
+        "titleParser": {"method": "xpath", "pattern": ""},
         "image": {"method": "xpath", "pattern": ""},
         "bonus": {"method": "xpath", "pattern": ""},
         "alt": {"method": "xpath", "pattern": ""}
     },
     {
+        "code": "smbc",
         "url": "http://www.smbc-comics.com",
-        "headline": "Saturday Morning Breakfast Cereal",
+        "title": "Saturday Morning Breakfast Cereal",
         "creator": "Zach Weinersmith",
         "banner": "",
         "start": "http://www.smbc-comics.com?id=3658",
         "next": {"method": "xpath", "pattern": ""},
-        "title": {"method": "xpath", "pattern": ""},
+        "titleParser": {"method": "xpath", "pattern": ""},
         "image": {"method": "xpath", "pattern": ""},
         "bonus": {"method": "xpath", "pattern": ""},
         "alt": {"method": "xpath", "pattern": ""}
