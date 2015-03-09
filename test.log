@@ -1,6 +1,0 @@
-21:30:49.660 TKD [main] INFO  com.comicgator.lurker.Main$ - Spinning up Lurker
-21:30:49.923 TKD [main] INFO  com.comicgator.lurker.Main$ - Running full etl for comics xkcd, smbc
-21:30:49.923 TKD [main] DEBUG com.comicgator.lurker.Main$ - this is where I etl
-21:31:00.996 TKD [main] INFO  com.comicgator.lurker.Main$ - Spinning up Lurker
-21:31:01.359 TKD [main] INFO  com.comicgator.lurker.Main$ - Running full etl for comics xkcd, smbc
-21:31:01.359 TKD [main] DEBUG com.comicgator.lurker.Main$ - this is where I etl

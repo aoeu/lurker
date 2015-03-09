@@ -8,7 +8,7 @@
     </appender>
 
     <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-        <file>/Users/c11z/Projects/lurker/test.log</file>
+        <file>/Users/c11z/Projects/lurker/logs/lurker.log</file>
         <append>true</append>
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} TKD [%thread] %-5level %logger{36} - %msg%n</pattern>

@@ -1,4 +1,4 @@
-dea/scopes/
+idea/scopes/
 .idea/dictionaries/
 .idea/inspectionProfiles/
 .idea/libraries/
@@ -19,6 +19,6 @@ build
 .DS_Store
 *~
 target/
-
+logs/
 testdata/debugger
 .vagrant
