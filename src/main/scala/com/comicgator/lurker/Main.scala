@@ -1,6 +1,7 @@
 package com.comicgator.lurker
 
 import scala.io.{BufferedSource, Source}
+import org.slf4j.LoggerFactory
 import org.json4s._
 import org.json4s.native.JsonMethods._
 
@@ -11,6 +12,13 @@ import org.json4s.native.JsonMethods._
  */
 
 object Main {
+  /**
+   * Logging using logback settings in lurker/src/main/resources/logback.xml
+   * If err try
+   * StatusPrinter.print((LoggerFactory.getILoggerFactory).asInstanceOf[LoggerContext])
+   * @return
+   */
+  def logger = LoggerFactory.getLogger(this.getClass)
   val usage = """Usage: [--no-delta] [<code>...]
                  |--no-delta
                  |    Runs ETL from first page of comic strip.
@@ -20,8 +28,7 @@ object Main {
                  |    Default is to run all comics.""".stripMargin
   def main(args: Array[String]): Unit = {
     val arglist = args.toList
-
-
+    logger.info("Spinning up Lurker")
     /**
      * parseOptions: a closure that recursively examines the args list. It accepts defaults for the delta boolean and
      * comics list which are then updated and returned.
@@ -33,7 +40,7 @@ object Main {
      */
     def parseOptions(args: List[String], delta: Boolean, comicCodes: List[String]): (Boolean, List[String]) = {
       args match {
-        case Nil => (delta, comics)
+        case Nil => (delta, comicCodes)
         case ("-h" | "--help") :: tail =>
           println(usage)
           sys.exit(0)
@@ -47,6 +54,7 @@ object Main {
     val (delta: Boolean, comicCodes: List[String]) = parseOptions(arglist, delta = true, List[String]())
     // Empty comicCodes implies that all comics are targeted to be scraped.
     val comics: List[Comic] = if(comicCodes.isEmpty) comicMap.values.toList else comicCodes flatMap comicMap.get
+    logger.info(s"Running ${if(delta) "delta etl" else "full etl"} for comics ${comics.mkString(", ")}")
     etl(delta, comics)
   }
 
@@ -70,15 +78,12 @@ object Main {
    * @param comics List of targeted Comic objects to be scraped.
    */
   def etl(delta: Boolean, comics: List[Comic]): Unit = {
-    println(delta)
-    for (comic <- comics) {
-      println(comic.toString())
-    }
+    logger.debug("this is where I etl")
   }
 }
 
 class Comic(val code: String, url: String, title: String, banner: String, start: String, next: Parser, image: Parser, titleParser: Parser,
             bonus: Parser, alt: Parser) {
-  override def toString: String = s"(code=$code, url=$url, title=$title, banner=$banner, start=$start, title_parser=$titleParser)"
+  override def toString: String = s"$code"
 }
 case class Parser(method: String, patterns: Array[String])
