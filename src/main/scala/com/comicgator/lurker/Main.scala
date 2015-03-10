@@ -1,20 +1,21 @@
 package com.comicgator.lurker
 
-import scala.io.{BufferedSource, Source}
-import org.slf4j.LoggerFactory
-import org.json4s._
+import org.json4s.{DefaultFormats, _}
 import org.json4s.native.JsonMethods._
+import org.json4s.native.Serialization.write
+import org.slf4j.LoggerFactory
+import scalaj.http._
 
+import scala.io.{BufferedSource, Source}
 // TODO: Split into separate files
 
 /**
- * Main object reads the initialization file comics.json, extracts them to comic objects. It takes a
+ * Main does all the things
  */
-
 object Main {
   /**
    * Logging using logback settings in lurker/src/main/resources/logback.xml
-   * If err try
+   * If trouble try
    * StatusPrinter.print((LoggerFactory.getILoggerFactory).asInstanceOf[LoggerContext])
    * @return
    */
@@ -26,8 +27,9 @@ object Main {
                  |<code>...
                  |    List of target comics to run etl against. Use "name" from comics.json.
                  |    Default is to run all comics.""".stripMargin
+
   def main(args: Array[String]): Unit = {
-    val arglist = args.toList
+    val argList = args.toList
     logger.info("Spinning up Lurker")
     /**
      * parseOptions: a closure that recursively examines the args list. It accepts defaults for the delta boolean and
@@ -51,10 +53,10 @@ object Main {
       }
     }
     val comicMap = loadComics()
-    val (delta: Boolean, comicCodes: List[String]) = parseOptions(arglist, delta = true, List[String]())
+    val (delta: Boolean, comicCodes: List[String]) = parseOptions(argList, delta = true, List[String]())
     // Empty comicCodes implies that all comics are targeted to be scraped.
     val comics: List[Comic] = if(comicCodes.isEmpty) comicMap.values.toList else comicCodes flatMap comicMap.get
-    logger.info(s"Running ${if(delta) "delta etl" else "full etl"} for comics ${comics.mkString(", ")}")
+    logger.info(s"Running${if(delta) " delta " else " "}ETL for comics: ${comics.mkString(", ")}")
     etl(delta, comics)
   }
 
@@ -67,7 +69,7 @@ object Main {
     val file: BufferedSource = Source.fromFile("comics.json")
     val json: JValue = parse(file.mkString)
     val comics: List[Comic] = json.extract[List[Comic]]
-    val comicMap: Map[String, Comic] = comics.map(c => (c.code, c)).toMap
+    val comicMap: Map[String, Comic] = comics.map(c => (c.id, c)).toMap
     comicMap
   }
 
@@ -78,12 +80,130 @@ object Main {
    * @param comics List of targeted Comic objects to be scraped.
    */
   def etl(delta: Boolean, comics: List[Comic]): Unit = {
-    logger.debug("this is where I etl")
+    for(comic <- comics) {
+      logger.info(s"Scraping comic: $comic")
+      comic.save()
+    }
   }
 }
 
-class Comic(val code: String, url: String, title: String, banner: String, start: String, next: Parser, image: Parser, titleParser: Parser,
-            bonus: Parser, alt: Parser) {
-  override def toString: String = s"$code"
+
+/**
+ * Comic Class representing comic meta data and strategies for parsing strips from comic website.
+ * @param id String predetermined in comics.json configuration file.
+ * @param hostname String usually the domain and tld of the comic website, useful for matching or creating urls.
+ * @param title String represents the general name of the comic.
+ * @param creator String the name of the comic creator.
+ * @param banner_image String location of the pre-generated image representing the comic in-app.
+ * @param start_url String a url of the very first strip of the comic. ETL starts here if delta is false.
+ * @param next_parser Parser strategy for getting the next endpoint from a strip page.
+ * @param image_parser Parser strategy for getting the url of the image from a strip page.
+ * @param title_parser Parser strategy for getting the title of the comic from the strip page.
+ * @param bonus_image_parser Parser strategy for getting the bonus image from the strip page.
+ * @param alt_text_parser Parser strategy for getting the alt_text from the strip page.
+ */
+class Comic(val id: String, hostname: String, title: String, creator: String, banner_image: String, start_url: String,
+            next_parser: Parser, image_parser: Parser, title_parser: Parser, bonus_image_parser: Parser,
+            alt_text_parser: Parser) {
+  def logger = LoggerFactory.getLogger(this.getClass)
+  /* underscores used for json import, recast them for consistency */
+  private val bannerImage = banner_image
+  private val startUrl = start_url
+  val nextParser = next_parser
+  val imageParser = image_parser
+  val titleParser = title_parser
+  val bonusImageParser = bonus_image_parser
+  val altTextParser = alt_text_parser
+
+  /**
+   * Exports relevant variables to a json string suitable for http post/patch requests.
+   * @return JSON formatted string
+   */
+  def export = {
+    val jsonMap = Map("id" -> id, "hostname" -> hostname, "title" -> title, "creator" -> creator,
+    "banner_image" -> bannerImage, "image_parser" -> imageParser.export)
+    // Passing implicit DefaultFormats
+    write(jsonMap)(DefaultFormats)
+  }
+
+  /**
+   * Post/Patch Comic to Maestro and into the database.
+   */
+  def save() = {
+    logger.info(s"Saving comic ${this.id}")
+    logger.debug(this.export)
+    val url = "http://192.168.34.10:3000/comic"
+    val postResponse: HttpResponse[String] = Http(url).
+      method("POST").
+      auth("c11z", "c11z").
+      header("User-Agent", "ComicGator (http://github.com/comicgator/lurker").
+      postData(this.export).asString
+    if(postResponse.is4xx) {
+      logger.error(s"Unable to POST ${this.id}... attempting to PATCH ")
+      val patchResponse: HttpResponse[String] = Http(url).
+        param("id", s"eq.$this.id").
+        method("PATCH").
+        auth("c11z", "c11z").
+        header("User-Agent", "ComicGator (http://github.com/comicgator/lurker").
+        postData(this.export).asString
+      if(patchResponse.is4xx) {
+        logger.error(s"Unable to PATCH ${this.id}")
+//        logger.error(s"${patchResponse.}")
+//        throw new MaestroException("When in trouble or in doubt, run in circles, scream and shout.")
+      }
+      if(patchResponse.is5xx) logger.error("Someone has killed the server in mid path.")
+    }
+    if(postResponse.is5xx) logger.error("Someone forgot to turn on the server.")
+
+
+  }
+
+  /**
+    * Override and simplify toString method
+   * @return String of the Comic id
+   */
+  override def toString: String = s"$id"
 }
-case class Parser(method: String, patterns: Array[String])
+
+/**
+ * Parser strategy, right now only supports xpath.
+ * @param method String a method for scrapping a piece of content out of the html.
+ * @param patterns List of Strings representing an xpath or some unique pattern to get the content out of the html.
+ */
+case class Parser(method: String, patterns: List[String]) {
+  def export = {
+    val jsonMap = Map("method" -> method, "patterns" -> patterns)
+    // Passing implicit DefaultFormats
+    write(jsonMap)(DefaultFormats)
+  }
+}
+
+/**
+ * Strip Class represents a specific page of a web comic i.e. comic 'strip'.
+ * @param comicId String representing the comic this strip is related to.
+ * @param checksum String a md5 hash of the image html tag found on the strip page. Used to positively identify the
+ *                 comic strip.
+ * @param title String the title of the strip.
+ * @param number Integer used to order the strips in time. Unique index on (comic_id, number) combination.
+ * @param url String url of the comic strip.
+ * @param image String image url of the comic strip.
+ * @param thumbnailImage String a url of the thumbnail image for the comic strip generated by lurker.
+ * @param bonusImage String a url of the bonus image of the comic strip.
+ * @param altText String the title or alt text found with the main image.
+ */
+class Strip(comicId: String, checksum: String, title: String, number: Integer, url: String, image: String,
+            thumbnailImage: String, bonusImage: String, altText: String) {
+  def logger = LoggerFactory.getLogger(this.getClass)
+  var id: Integer = 0
+  def getId: Integer = this.id
+  def setId(id: Integer) = this.id = id
+
+  def export: String = {
+    val jsonMap = Map("comic_id" -> comicId, "checksum" -> checksum, "title" -> title,
+      "number" -> number, "url" -> url, "image" -> image, "thumbnail_image" -> thumbnailImage,
+      "bonus_image" -> bonusImage, "alt_text" -> altText)
+    // Passing implicit DefaultFormats
+    write(jsonMap)(DefaultFormats)
+  }
+
+}

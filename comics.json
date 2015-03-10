@@ -1,28 +1,28 @@
 [
     {
-        "code": "xkcd",
-        "url": "http://xkcd.com",
+        "id": "xkcd",
+        "hostname": "xkcd.com",
         "title": "XKCD",
         "creator": "Randall Monroe",
-        "banner": "",
-        "start": "http://xkcd.com/1493",
-        "next": {"method": "xpath", "pattern": ""},
-        "titleParser": {"method": "xpath", "pattern": ""},
-        "image": {"method": "xpath", "pattern": ""},
-        "bonus": {"method": "xpath", "pattern": ""},
-        "alt": {"method": "xpath", "pattern": ""}
+        "banner_image": "",
+        "start_url": "http://xkcd.com/1493",
+        "next_parser": {"method": "xpath", "pattern": ""},
+        "title_parser": {"method": "xpath", "pattern": ""},
+        "image_parser": {"method": "xpath", "pattern": ""},
+        "bonus_image_parser": {"method": "xpath", "pattern": ""},
+        "alt_text_parser": {"method": "xpath", "pattern": ""}
     },
     {
-        "code": "smbc",
-        "url": "http://www.smbc-comics.com",
+        "id": "smbc",
+        "hostname": "smbc-comics.com",
         "title": "Saturday Morning Breakfast Cereal",
         "creator": "Zach Weinersmith",
-        "banner": "",
-        "start": "http://www.smbc-comics.com?id=3658",
-        "next": {"method": "xpath", "pattern": ""},
-        "titleParser": {"method": "xpath", "pattern": ""},
-        "image": {"method": "xpath", "pattern": ""},
-        "bonus": {"method": "xpath", "pattern": ""},
-        "alt": {"method": "xpath", "pattern": ""}
+        "banner_image": "",
+        "start_url": "http://www.smbc-comics.com?id=3658",
+        "next_parser": {"method": "xpath", "pattern": ""},
+        "title_parser": {"method": "xpath", "pattern": ""},
+        "image_parser": {"method": "xpath", "pattern": ""},
+        "bonus_image_parser": {"method": "xpath", "pattern": ""},
+        "alt_text_parser": {"method": "xpath", "pattern": ""}
     }
 ]

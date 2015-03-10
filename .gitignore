@@ -19,6 +19,6 @@ build
 .DS_Store
 *~
 target/
-logs/
+logs
 testdata/debugger
 .vagrant
