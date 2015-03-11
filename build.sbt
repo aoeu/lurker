@@ -11,7 +11,7 @@ libraryDependencies ++= Seq(
   "org.scalacheck" %% "scalacheck" % "1.12.1" % "test" withSources() withJavadoc(),
   "org.json4s" %% "json4s-native" % "3.2.11",
   "ch.qos.logback" % "logback-classic" % "1.1.2",
-  "org.scalaj" %% "scalaj-http" % "1.1.4"
+  "net.databinder.dispatch" %% "dispatch-core" % "0.11.2"
 )
 
 initialCommands := "import com.comicgator.lurker._"

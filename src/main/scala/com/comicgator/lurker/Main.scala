@@ -4,9 +4,11 @@ import org.json4s.{DefaultFormats, _}
 import org.json4s.native.JsonMethods._
 import org.json4s.native.Serialization.write
 import org.slf4j.LoggerFactory
-import scalaj.http._
+import dispatch._, Defaults._
 
 import scala.io.{BufferedSource, Source}
+import scala.util.{Failure, Success, Try}
+
 // TODO: Split into separate files
 
 /**
@@ -15,7 +17,7 @@ import scala.io.{BufferedSource, Source}
 object Main {
   /**
    * Logging using logback settings in lurker/src/main/resources/logback.xml
-   * If trouble try
+   * If trouble try:
    * StatusPrinter.print((LoggerFactory.getILoggerFactory).asInstanceOf[LoggerContext])
    * @return
    */
@@ -82,7 +84,7 @@ object Main {
   def etl(delta: Boolean, comics: List[Comic]): Unit = {
     for(comic <- comics) {
       logger.info(s"Scraping comic: $comic")
-      comic.save()
+      Maestro.saveComic(comic)
     }
   }
 }
@@ -127,38 +129,6 @@ class Comic(val id: String, hostname: String, title: String, creator: String, ba
   }
 
   /**
-   * Post/Patch Comic to Maestro and into the database.
-   */
-  def save() = {
-    logger.info(s"Saving comic ${this.id}")
-    logger.debug(this.export)
-    val url = "http://192.168.34.10:3000/comic"
-    val postResponse: HttpResponse[String] = Http(url).
-      method("POST").
-      auth("c11z", "c11z").
-      header("User-Agent", "ComicGator (http://github.com/comicgator/lurker").
-      postData(this.export).asString
-    if(postResponse.is4xx) {
-      logger.error(s"Unable to POST ${this.id}... attempting to PATCH ")
-      val patchResponse: HttpResponse[String] = Http(url).
-        param("id", s"eq.$this.id").
-        method("PATCH").
-        auth("c11z", "c11z").
-        header("User-Agent", "ComicGator (http://github.com/comicgator/lurker").
-        postData(this.export).asString
-      if(patchResponse.is4xx) {
-        logger.error(s"Unable to PATCH ${this.id}")
-//        logger.error(s"${patchResponse.}")
-//        throw new MaestroException("When in trouble or in doubt, run in circles, scream and shout.")
-      }
-      if(patchResponse.is5xx) logger.error("Someone has killed the server in mid path.")
-    }
-    if(postResponse.is5xx) logger.error("Someone forgot to turn on the server.")
-
-
-  }
-
-  /**
     * Override and simplify toString method
    * @return String of the Comic id
    */
@@ -191,14 +161,12 @@ case class Parser(method: String, patterns: List[String]) {
  * @param bonusImage String a url of the bonus image of the comic strip.
  * @param altText String the title or alt text found with the main image.
  */
-class Strip(comicId: String, checksum: String, title: String, number: Integer, url: String, image: String,
-            thumbnailImage: String, bonusImage: String, altText: String) {
+class Strip(val id: Integer, comicId: String, val checksum: String, title: String, number: Integer, val url: String,
+            image: String, thumbnailImage: String, bonusImage: String, altText: String, updated_at: String, created_at: String) {
   def logger = LoggerFactory.getLogger(this.getClass)
-  var id: Integer = 0
-  def getId: Integer = this.id
-  def setId(id: Integer) = this.id = id
 
-  def export: String = {
+  def export(comicId: String, checksum: String, title: String, number: Integer, url: String, image: String,
+  thumbnailImage: String, bonusImage: String, altText: String): String = {
     val jsonMap = Map("comic_id" -> comicId, "checksum" -> checksum, "title" -> title,
       "number" -> number, "url" -> url, "image" -> image, "thumbnail_image" -> thumbnailImage,
       "bonus_image" -> bonusImage, "alt_text" -> altText)
@@ -206,4 +174,75 @@ class Strip(comicId: String, checksum: String, title: String, number: Integer, u
     write(jsonMap)(DefaultFormats)
   }
 
+  def export: String = {
+    val jsonMap = Map("comic_id" -> this.comicId, "checksum" -> this.checksum, "title" -> this.title,
+      "number" -> this.number, "url" -> this.url, "image" -> this.image, "thumbnail_image" -> this.thumbnailImage,
+      "bonus_image" -> this.bonusImage, "alt_text" -> this.altText)
+    // Passing implicit DefaultFormats
+    write(jsonMap)(DefaultFormats)
+  }
+
+}
+
+object Maestro {
+  def logger = LoggerFactory.getLogger(this.getClass)
+  val mHost = host("192.168.34.10", 3000)
+    .addHeader("User-Agent", "Comic Gator (http://github.com/comicgator/lurker)")
+    .setContentType("application/json","utf-8")
+    .as_!("c11z", "c11z")
+
+  val asStatus: (Res) => Int = as.Response {res =>
+    res.getStatusCode
+  }
+
+  val asStrip: (Res) => Strip = as.Response {res =>
+    val json: JValue = parse(res.getResponseBody)
+    implicit val formats = DefaultFormats
+    json.extract[Strip]
+  }
+
+  val asRes: (Res) => Res = as.Response {res => res}
+
+//  def get() = Http(this.mHost.GET)
+  def get(endpoint: String): Future[Res] = Http((this.mHost / endpoint).GET)
+  def get(endpoint: String, params: Map[String, String]): Future[Res] = {
+    Http((this.mHost / endpoint).GET <<? params)
+  }
+  def post(endpoint: String, body: String): Future[Res] = {
+    val req = (this.mHost / endpoint).POST.setBody(body)
+    logger.debug(s"POST body=$body}")
+    Http(req OK asRes)
+  }
+  def patch(endpoint: String, params: Map[String, String], body: String): Future[Res] = {
+    val req = (this.mHost / endpoint).PATCH.setBody(body) <<? params
+    logger.debug(s"PATCH body= $body")
+    Http(req OK asRes)
+  }
+
+  def saveComic(c: Comic) = {
+    logger.info(s"Saving comic ${c.id}")
+    val res = this.post("comic", c.export) recover {
+      case e => this.patch("comic", Map("id" -> s"eq.${c.id}"), c.export)
+    }
+    res onComplete {
+      case Success(r) => logger.info(s"Successfully updated comic ${c.id}")
+      case Failure(ex) => logger.error(s"Failed to update comic ${c.id}")
+    }
+  }
+
+//  def saveStrip(s: Strip): Integer = {
+//    logger.info(s"Saving Strip ${s.url}")
+//    val res = this.post("strip", s.export) recover {
+//      case e => this.patch("strip", Map("checksum" -> s"eq.${s.checksum}"), s.export)
+//    }
+//  }
+
+//  def postNow(endpoint: String, body: String): Int = {
+//    val res = this.post(endpoint, body).result(Duration(5, "seconds"))
+//    res.getStatusCode
+//  }
+//  def patchNow(endpoint: String, params: Map[String, Seq[String]], body: String): Int = {
+//    val res = this.patch(endpoint, params, body).result(Duration(5,"seconds"))
+//    res.getStatusCode
+//  }
 }
